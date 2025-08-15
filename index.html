@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Generator with Hugging Face</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6e48aa;
+            --secondary: #9d50bb;
+            --dark: #1a1a2e;
+            --light: #f8f9fa;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --info: #4895ef;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f7;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            color: var(--success);
+        }
+
+        .navbar {
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 1.5rem;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+            padding: 0.5rem 0;
+        }
+
+        .nav-links a:hover {
+            color: var(--success);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--success);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .hero {
+            padding: 4rem 0;
+            text-align: center;
+            background: linear-gradient(rgba(245, 245, 247, 0.9), rgba(245, 245, 247, 0.9)), 
+                        url('https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80') no-repeat center center/cover;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            color: #555;
+        }
+
+        .tool-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .tool-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 1rem;
+        }
+
+        .tool-header h2 {
+            font-size: 1.8rem;
+            color: var(--primary);
+        }
+
+        .tool-tabs {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .tab-btn {
+            padding: 0.5rem 1.5rem;
+            background: none;
+            border: none;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .tab-btn:not(.active):hover {
+            background: #f0f0f0;
+        }
+
+        .tool-content {
+            display: none;
+        }
+
+        .tool-content.active {
+            display: block;
+        }
+
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(110, 72, 170, 0.05);
+        }
+
+        .upload-area i {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .upload-area h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .upload-area p {
+            color: #777;
+            margin-bottom: 1rem;
+        }
+
+        .upload-btn {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(110, 72, 170, 0.3);
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(110, 72, 170, 0.4);
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .settings-panel {
+            background: #f9f9f9;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .settings-panel h4 {
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .slider {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 8px;
+            border-radius: 4px;
+            background: #ddd;
+            outline: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            background: var(--secondary);
+        }
+
+        .slider-value {
+            min-width: 40px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        textarea, select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(110, 72, 170, 0.2);
+        }
+
+        .results {
+            display: none;
+            margin-top: 2rem;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .results-header h3 {
+            color: var(--primary);
+        }
+
+        .download-btn {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .download-btn:hover {
+            background: #3ab7d8;
+            transform: translateY(-2px);
+        }
+
+        .image-comparison {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .image-comparison {
+                flex-direction: column;
+            }
+        }
+
+        .image-box {
+            flex: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .image-box img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .image-info {
+            padding: 1rem;
+            background: white;
+            border-top: 1px solid #eee;
+        }
+
+        .image-info h4 {
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .image-info p {
+            color: #777;
+            font-size: 0.9rem;
+        }
+
+        .stats {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #777;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .loading i {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading p {
+            font-size: 1.2rem;
+            color: var(--dark);
+        }
+
+        footer {
+            background: var(--dark);
+            color: white;
+            padding: 4rem 0 2rem;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .footer-column h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+
+        .footer-column h3::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 2px;
+            background: var(--primary);
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.8rem;
+        }
+
+        .footer-links a {
+            color: #ddd;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .footer-links a:hover {
+            color: var(--success);
+            transform: translateX(5px);
+        }
+
+        .footer-links a i {
+            font-size: 0.8rem;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .social-links a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .social-links a:hover {
+            background: var(--primary);
+            transform: translateY(-3px);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--dark);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            z-index: 1000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast i {
+            font-size: 1.5rem;
+        }
+
+        .toast.success i {
+            color: var(--success);
+        }
+
+        .toast.error i {
+            color: var(--danger);
+        }
+
+        .toast.warning i {
+            color: var(--warning);
+        }
+
+        .toast-content h4 {
+            margin-bottom: 0.3rem;
+        }
+
+        .toast-content p {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .close-toast {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            margin-left: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                display: none;
+                flex-direction: column;
+                width: 100%;
+                margin-top: 1rem;
+            }
+
+            .nav-links.active {
+                display: flex;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .tool-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .tool-tabs {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .tab-btn {
+                flex: 1;
+                text-align: center;
+                padding: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-magic"></i>
+                    <span>AI Image Wizard</span>
+                </div>
+                <nav class="navbar">
+                    <button class="mobile-menu-btn" id="mobile-menu-btn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <ul class="nav-links" id="nav-links">
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#tool">Tool</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="container">
+            <h1>Transform Your Images with AI Power</h1>
+            <p>Upload your images and let our advanced AI technology generate stunning variations powered by Hugging Face's API.</p>
+        </div>
+    </section>
+
+    <!-- Main Tool Section -->
+    <section class="tool-section" id="tool">
+        <div class="container">
+            <div class="tool-container">
+                <div class="tool-header">
+                    <h2>AI Image Generator</h2>
+                </div>
+
+                <!-- Generator Tab -->
+                <div class="tool-content active" id="generator">
+                    <div class="upload-area" id="generator-upload-area">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <h3>Upload Your Image</h3>
+                        <p>Drag & drop your image here or click to browse</p>
+                        <p class="small">Supports: JPG, PNG, WEBP (Max 5MB)</p>
+                        <button class="upload-btn">Select Image</button>
+                        <input type="file" id="generator-file-input" accept="image/*">
+                    </div>
+
+                    <div class="settings-panel">
+                        <h4>Generation Settings</h4>
+                        <div class="form-group">
+                            <label for="prompt">AI Prompt</label>
+                            <textarea id="prompt" rows="3" placeholder="Describe what you want to generate (e.g. 'make it look like a painting')"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="style">Art Style</label>
+                            <select id="style">
+                                <option value="realistic">Realistic</option>
+                                <option value="cartoon">Cartoon</option>
+                                <option value="painting">Painting</option>
+                                <option value="3d-render">3D Render</option>
+                                <option value="pixel-art">Pixel Art</option>
+                                <option value="anime">Anime</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="strength">Transformation Strength</label>
+                            <div class="slider-container">
+                                <input type="range" min="0" max="100" value="50" class="slider" id="strength">
+                                <span class="slider-value" id="strength-value">50%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="upload-btn" id="generate-btn" style="width: 100%;">
+                        <i class="fas fa-magic"></i> Generate AI Image
+                    </button>
+
+                    <div class="loading" id="generator-loading">
+                        <i class="fas fa-spinner"></i>
+                        <p>Generating your image with AI. This may take a few moments...</p>
+                    </div>
+
+                    <div class="results" id="generator-results">
+                        <div class="results-header">
+                            <h3>Generated Results</h3>
+                            <button class="download-btn" id="download-generated">
+                                <i class="fas fa-download"></i> Download
+                            </button>
+                        </div>
+                        <div class="image-comparison">
+                            <div class="image-box">
+                                <img id="original-image" src="" alt="Original Image">
+                                <div class="image-info">
+                                    <h4>Original</h4>
+                                    <p id="original-size"></p>
+                                </div>
+                            </div>
+                            <div class="image-box">
+                                <img id="generated-image" src="" alt="Generated Image">
+                                <div class="image-info">
+                                    <h4>Generated</h4>
+                                    <p id="generated-size"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="contact">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-column">
+                    <h3>AI Image Wizard</h3>
+                    <p>Transform your images with the power of artificial intelligence using Hugging Face's cutting-edge models.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                <div class="footer-column">
+                    <h3>Quick Links</h3>
+                    <ul class="footer-links">
+                        <li><a href="#home"><i class="fas fa-chevron-right"></i> Home</a></li>
+                        <li><a href="#tool"><i class="fas fa-chevron-right"></i> Image Tool</a></li>
+                        <li><a href="#contact"><i class="fas fa-chevron-right"></i> Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>Connect With Us</h3>
+                    <ul class="footer-links">
+                        <li><a href="https://whatsapp.com/channel/0029Vb5Wj7A1iUxVukeiWx21" target="_blank"><i class="fab fa-whatsapp"></i> Updates Channel</a></li>
+                        <li><a href="https://wa.me/message/HGOA2RII2C4GD1" target="_blank"><i class="fab fa-whatsapp"></i> WhatsApp Support</a></li>
+                        <li><a href="mailto:support@aiimagewizard.com"><i class="fas fa-envelope"></i> Email Us</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2023 AI Image Wizard. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <div class="toast-content">
+            <h4 id="toast-title">Success</h4>
+            <p id="toast-message">Operation completed successfully</p>
+        </div>
+        <button class="close-toast" id="close-toast">&times;</button>
+    </div>
+
+    <script>
+        // Mobile Menu Toggle
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const navLinks = document.getElementById('nav-links');
+
+        mobileMenuBtn.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+        });
+
+        // Slider Value Updates
+        const strengthSlider = document.getElementById('strength');
+        const strengthValue = document.getElementById('strength-value');
+
+        strengthSlider.addEventListener('input', () => {
+            strengthValue.textContent = `${strengthSlider.value}%`;
+        });
+
+        // File Upload Handling
+        const generatorUploadArea = document.getElementById('generator-upload-area');
+        const generatorFileInput = document.getElementById('generator-file-input');
+
+        // Generator Upload
+        generatorUploadArea.addEventListener('click', () => {
+            generatorFileInput.click();
+        });
+
+        generatorFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast('Error', 'File size exceeds 5MB limit', 'error');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    generatorUploadArea.innerHTML = `
+                        <img src="${event.target.result}" alt="Preview" style="max-width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 1rem;">
+                        <p>${file.name}</p>
+                        <p class="small">${(file.size / 1024).toFixed(2)} KB</p>
+                        <button class="upload-btn change-btn">Change Image</button>
+                    `;
+                    
+                    // Add event listener to the new change button
+                    document.querySelector('.change-btn').addEventListener('click', () => {
+                        generatorFileInput.click();
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Drag and Drop Functionality
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            generatorUploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            generatorUploadArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            generatorUploadArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            this.classList.add('highlight');
+        }
+
+        function unhighlight(e) {
+            this.classList.remove('highlight');
+        }
+
+        generatorUploadArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            const fileInput = generatorFileInput;
+            
+            fileInput.files = files;
+            const event = new Event('change');
+            fileInput.dispatchEvent(event);
+        }
+
+        // Toast Notification
+        const toast = document.getElementById('toast');
+        const toastTitle = document.getElementById('toast-title');
+        const toastMessage = document.getElementById('toast-message');
+        const closeToast = document.getElementById('close-toast');
+
+        function showToast(title, message, type = 'success') {
+            toast.className = 'toast';
+            toast.classList.add(type);
+            
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
+            
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 5000);
+        }
+
+        closeToast.addEventListener('click', () => {
+            toast.classList.remove('show');
+        });
+
+        // Hugging Face API Integration
+        const HF_API_TOKEN = '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';
+        const MODEL_NAME = 'runwayml/stable-diffusion-v1-5'; // Using Stable Diffusion for image-to-image
+
+        async function generateImageWithAI(imageUrl, prompt, style, strength) {
+            try {
+                // First, we need to convert the image to a format the API can use
+                const response = await fetch(imageUrl);
+                const blob = await response.blob();
+                
+                // Convert blob to base64
+                const base64data = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.readAsDataURL(blob);
+                });
+                
+                // The actual image data is after the comma
+                const imageData = base64data.split(',')[1];
+                
+                // Prepare the API request
+                const apiUrl = `https://api-inference.huggingface.co/models/${MODEL_NAME}`;
+                const payload = {
+                    inputs: {
+                        image: imageData,
+                        prompt: `${prompt} in ${style} style`,
+                        strength: parseFloat(strength)
+                    }
+                };
+                
+                const apiResponse = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${HF_API_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!apiResponse.ok) {
+                    const errorData = await apiResponse.json();
+                    throw new Error(errorData.error || `API request failed with status ${apiResponse.status}`);
+                }
+                
+                const resultBlob = await apiResponse.blob();
+                return URL.createObjectURL(resultBlob);
+            } catch (error) {
+                console.error('Error calling Hugging Face API:', error);
+                throw error;
+            }
+        }
+
+        // Image Generation with Hugging Face API
+        const generateBtn = document.getElementById('generate-btn');
+        generateBtn.addEventListener('click', async () => {
+            const fileInput = document.getElementById('generator-file-input');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showToast('Error', 'Please select an image first', 'error');
+                return;
+            }
+            
+            const prompt = document.getElementById('prompt').value;
+            if (!prompt) {
+                showToast('Error', 'Please enter a prompt for the AI', 'error');
+                return;
+            }
+            
+            const style = document.getElementById('style').value;
+            const strength = document.getElementById('strength').value / 100;
+            
+            const loading = document.getElementById('generator-loading');
+            const results = document.getElementById('generator-results');
+            
+            loading.style.display = 'block';
+            results.style.display = 'none';
+            
+            try {
+                const file = fileInput.files[0];
+                const originalImageUrl = URL.createObjectURL(file);
+                
+                // Display original image
+                document.getElementById('original-image').src = originalImageUrl;
+                document.getElementById('original-size').textContent = `Size: ${(file.size / 1024).toFixed(2)} KB`;
+                
+                // Call the Hugging Face API
+                const generatedImageUrl = await generateImageWithAI(originalImageUrl, prompt, style, strength);
+                
+                document.getElementById('generated-image').src = generatedImageUrl;
+                
+                // Get the size of the generated image
+                const sizeResponse = await fetch(generatedImageUrl);
+                const sizeBlob = await sizeResponse.blob();
+                document.getElementById('generated-size').textContent = `Size: ${(sizeBlob.size / 1024).toFixed(2)} KB`;
+                
+                loading.style.display = 'none';
+                results.style.display = 'block';
+                
+                showToast('Success', 'Image generated successfully!', 'success');
+            } catch (error) {
+                console.error('Error:', error);
+                loading.style.display = 'none';
+                showToast('Error', error.message || 'Failed to generate image. Please try again.', 'error');
+            }
+        });
+
+        // Download Button
+        document.getElementById('download-generated').addEventListener('click', () => {
+            const imgSrc = document.getElementById('generated-image').src;
+            if (!imgSrc) {
+                showToast('Error', 'No generated image to download', 'error');
+                return;
+            }
+            downloadImage(imgSrc, 'ai-generated-image.jpg');
+        });
+
+        function downloadImage(src, filename) {
+            const link = document.createElement('a');
+            link.href = src;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
